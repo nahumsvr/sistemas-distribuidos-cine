@@ -3,8 +3,11 @@ module proyecto-cine/backend
 go 1.27.2
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.13.0
 	github.com/pressly/goose/v3 v3.30.1
+	golang.org/x/crypto v0.59.0
+	golang.org/x/time v0.16.0
 )
 
 require (

@@ -109,7 +109,9 @@ sequenceDiagram
 | Tokens falsificados | JWT HS256 con secreto ≥ 32 bytes; se validan firma, `exp` y que `alg` sea HS256 |
 | Robo de token por XSS | Ver ADR-001: CSP estricta, vida de 1 h, sin `dangerouslySetInnerHTML` |
 | Acceso a reservas ajenas | El service compara `reservation.user_id` con el usuario del token → `404` |
-| Peticiones de otros orígenes | CORS con allowlist de un solo origen (`FRONTEND_ORIGIN`), sin `*` |
+| Peticiones de otros orígenes | CORS con allowlist de un solo origen (`FRONTEND_ORIGIN`), sin `*` ni credentials |
+| Formularios de otros sitios ("simple requests" sin preflight) | Se exige `Content-Type: application/json` (si no, `415`), lo que obliga al navegador a hacer el preflight de CORS |
+| Saltarse el rate limit con headers falsos | El límite usa la IP de la conexión TCP e ignora `X-Forwarded-For`, porque no hay un proxy de confianza |
 | Payloads gigantes / conexiones lentas | `http.MaxBytesReader` (1 MB) y timeouts de lectura/escritura en el servidor |
 | Secretos en el repo | Solo en `.env` (ignorado por git); `.env.example` con valores de ejemplo |
 | Exposición de la DB | Sin puerto publicado; solo accesible desde la red de Compose |

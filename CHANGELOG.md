@@ -14,7 +14,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - `.gitignore`.
 - Migraciones de base de datos (esquema, restricción anti doble reserva y seed de desarrollo) con script de verificación SQL.
 - Backend base en Go: configuración validada por entorno, pool `pgx`, migraciones automáticas con goose, `GET /api/healthz`, logs JSON, headers de seguridad, recuperación de panics y apagado ordenado.
+- Autenticación: `POST /api/auth/register`, `POST /api/auth/login` y `GET /api/auth/me`, con JWT HS256 de 1 hora en el header `Authorization: Bearer`.
 - Dockerfile del backend: multi-stage, imagen distroless de ~22 MB, usuario sin privilegios y healthcheck integrado.
+
+### Security
+
+- Contraseñas con bcrypt (cost 12) y login sin enumeración de usuarios (misma respuesta y mismo tiempo).
+- Validación estricta del JWT: solo HS256, issuer y `exp` obligatorios, rol válido.
+- CORS con un solo origen permitido, sin credentials.
+- Rate limit por IP en login y registro (`429` + `Retry-After`).
+- Límite de 1 MB por cuerpo (`413`), `Content-Type: application/json` obligatorio (`415`) y rechazo de campos desconocidos.
 
 <!--
 Plantilla para la primera versión entregable (mover aquí lo de [Unreleased] al publicar):

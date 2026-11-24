@@ -28,6 +28,8 @@ Todos los errores tienen la misma forma:
 | 404 | `NOT_FOUND` | El recurso no existe o pertenece a otro usuario |
 | 409 | `SEAT_TAKEN` | Algún asiento ya está reservado para esa función |
 | 409 | `EMAIL_TAKEN` | El email ya está registrado |
+| 413 | `PAYLOAD_TOO_LARGE` | El cuerpo supera 1 MB |
+| 415 | `UNSUPPORTED_MEDIA_TYPE` | Un `POST`/`PUT` con cuerpo no trae `Content-Type: application/json` |
 | 422 | `SHOWTIME_STARTED` | Se intenta reservar, modificar o cancelar una función que ya empezó |
 | 429 | `RATE_LIMITED` | Demasiados intentos de login o registro |
 | 500 | `INTERNAL` | Error inesperado (el detalle solo se registra en el log) |
@@ -51,13 +53,22 @@ Las rutas inexistentes responden `404 NOT_FOUND` con el mismo formato JSON de er
 | POST | `/auth/login` | — | `{ "email", "password" }` | `200 { "token", "user" }` |
 | GET | `/auth/me` | user | — | `200 { "user" }` |
 
-Validaciones: email válido, `password` de 8 a 72 caracteres (límite de bcrypt), `name` de 1 a 100 caracteres.
+Validaciones:
+- `email` válido; se guarda en minúsculas y sin espacios.
+- `password` de 8 a 72 **bytes** (límite de bcrypt; un emoji ocupa 4 bytes).
+- `name` de 1 a 100 caracteres.
+- Se rechazan los campos desconocidos: por ejemplo, enviar `"role"` responde `400`. El rol siempre es `user`.
+
+Seguridad:
+- **Login:** un email inexistente y una contraseña incorrecta dan la misma respuesta (`401`) y tardan lo mismo, así que no se puede averiguar qué emails están registrados.
+- **Rate limit por IP:** login y registro comparten un límite de unos 5 intentos por minuto (burst de 5, recarga de 1 cada 12 s). Al superarlo se responde `429` con el header `Retry-After` en segundos.
+- **Header de autenticación:** el esquema `Bearer` no distingue mayúsculas. Sin header, con otro esquema o con un token inválido o expirado se responde `401` con `WWW-Authenticate: Bearer`.
 
 ```json
 // 200 /auth/login
 {
   "token": "eyJhbGciOiJIUzI1NiIs...",
-  "user": { "id": 2, "name": "Ana", "email": "ana@mail.com", "role": "user" }
+  "user": { "id": 2, "name": "Ana", "email": "ana@mail.com", "role": "user", "createdAt": "2026-11-24T17:23:06Z" }
 }
 ```
 

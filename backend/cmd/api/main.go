@@ -16,10 +16,15 @@ import (
 	"syscall"
 	"time"
 
+	"proyecto-cine/backend/internal/auth"
 	"proyecto-cine/backend/internal/config"
 	"proyecto-cine/backend/internal/httpapi"
+	"proyecto-cine/backend/internal/service"
 	"proyecto-cine/backend/internal/store/postgres"
 )
+
+// bcryptCost 12 takes ~250 ms per hash: slow for attackers, fine for users.
+const bcryptCost = 12
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
@@ -56,9 +61,17 @@ func run(logger *slog.Logger) error {
 	}
 	logger.Info("database ready")
 
+	tokens := auth.NewTokens(cfg.JWTSecret, cfg.JWTTTL)
+
 	srv := &http.Server{
-		Addr:              ":" + cfg.Port,
-		Handler:           httpapi.NewRouter(httpapi.Deps{DB: pool, Logger: logger}),
+		Addr: ":" + cfg.Port,
+		Handler: httpapi.NewRouter(httpapi.Deps{
+			DB:            pool,
+			Logger:        logger,
+			Auth:          service.NewAuthService(postgres.NewUserRepo(pool), tokens, bcryptCost),
+			Tokens:        tokens,
+			AllowedOrigin: cfg.FrontendOrigin,
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,

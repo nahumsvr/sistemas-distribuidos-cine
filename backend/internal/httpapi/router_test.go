@@ -15,13 +15,6 @@ type fakePinger struct{ err error }
 
 func (f fakePinger) Ping(context.Context) error { return f.err }
 
-func newTestRouter(p Pinger) http.Handler {
-	return NewRouter(Deps{
-		DB:     p,
-		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
-	})
-}
-
 func do(t *testing.T, h http.Handler, method, path string) *httptest.ResponseRecorder {
 	t.Helper()
 	rec := httptest.NewRecorder()
@@ -42,7 +35,7 @@ func decodeError(t *testing.T, rec *httptest.ResponseRecorder) errorBody {
 }
 
 func TestHealthz_OK(t *testing.T) {
-	rec := do(t, newTestRouter(fakePinger{}), http.MethodGet, "/api/healthz")
+	rec := do(t, newTestRouterDB(t, fakePinger{}), http.MethodGet, "/api/healthz")
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rec.Code)
@@ -54,7 +47,7 @@ func TestHealthz_OK(t *testing.T) {
 }
 
 func TestHealthz_DatabaseDown(t *testing.T) {
-	rec := do(t, newTestRouter(fakePinger{err: errors.New("connection refused")}), http.MethodGet, "/api/healthz")
+	rec := do(t, newTestRouterDB(t, fakePinger{err: errors.New("connection refused")}), http.MethodGet, "/api/healthz")
 
 	if rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("status = %d, want 503", rec.Code)
@@ -69,7 +62,7 @@ func TestHealthz_DatabaseDown(t *testing.T) {
 }
 
 func TestUnknownRoute_ReturnsJSON404(t *testing.T) {
-	rec := do(t, newTestRouter(fakePinger{}), http.MethodGet, "/api/does-not-exist")
+	rec := do(t, newTestRouterDB(t, fakePinger{}), http.MethodGet, "/api/does-not-exist")
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", rec.Code)
@@ -80,7 +73,7 @@ func TestUnknownRoute_ReturnsJSON404(t *testing.T) {
 }
 
 func TestSecurityHeaders_OnEveryResponse(t *testing.T) {
-	h := newTestRouter(fakePinger{})
+	h := newTestRouterDB(t, fakePinger{})
 	for _, path := range []string{"/api/healthz", "/api/does-not-exist"} {
 		rec := do(t, h, http.MethodGet, path)
 		want := map[string]string{
