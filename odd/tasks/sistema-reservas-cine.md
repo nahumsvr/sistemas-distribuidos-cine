@@ -28,7 +28,7 @@ Decisiones del equipo (no vienen del PDF):
 | ID | Specs | Tarea | Responsable sugerido | Estado |
 |---|---|---|---|---|
 | T0 | S6, S8 | `git init`, `.gitignore`, `.env.example`, README, CHANGELOG, docs | Nahum | ✅ hecho |
-| T1 | S4, S9 | Migraciones SQL (esquema + índices + `UNIQUE(showtime_id, seat_id)`) y seed (películas, 2 salas, funciones, usuarios de prueba) | Héctor | ⬜ |
+| T1 | S4, S9 | Migraciones SQL (esquema + índices + `UNIQUE(showtime_id, seat_id)`) y seed (películas, 2 salas, funciones, usuarios de prueba) | Héctor | ✅ hecho |
 | T2 | S3, S7 | Backend base: config por env, `slog`, pool `pgx`, `goose` embebido, `GET /api/healthz`, `http.Server` con timeouts y apagado ordenado, Dockerfile multi-stage (distroless, non-root) | Nahum | ⬜ |
 | T3 | S1, S10 | Auth: `register`, `login`, `me`; bcrypt; emisión y middleware JWT; CORS con allowlist; rate limit en login/registro; tests | Nahum | ⬜ |
 | T4 | S1, S3, S9 | Catálogo: películas, funciones y disponibilidad de asientos (una sola query); tests | Héctor | ⬜ |
@@ -58,4 +58,5 @@ Orden recomendado: T1 → T2 → T3 → (T4, T7 en paralelo) → T5 → T8 → T
 - **L1** (2026-11-24) — Pedido original: "necesito que mires el pdf donde se especifica el proyecto, que sea simple, nada complejo, planea la arquitectura, usa las mejores prácticas actuales (separación de responsabilidades, optimización en el bacj y front, buena seguridad, cookies que protejan tokens, etc) siempre teniendo en cuenta el alcance del proyecto (proyecto escolar de fin de semestre) y una arquitectura basada en contenedores de docker, genera la lista de tareas, changelog, documentación, readme, etc"
 - **L2** (2026-11-24) — Decisión: el dominio es de asientos de cine y la documentación va en español.
 - **L3** (2026-11-24) — Corrección del usuario: "mejor si pon las cookies en el local storage, para evitar el uso de ngnix, pon en la documentación por que se tomó esta desición". Se le explicó que una cookie `HttpOnly` también funciona sin nginx (vía CORS); el usuario eligió "localStorage + Bearer". Queda documentado en ADR-001.
-- **L4** (2026-11-24) — T0 completada: esqueleto del repo y documentación inicial. Siguiente paso: T1.
+- **L4** (2026-11-24) — T0 completada: esqueleto del repo y documentación inicial (commit `e884aba`).
+- **L5** (2026-11-24) — T1 completada: `backend/internal/migrations/` (esquema, seed y `verify.sql`). Se verificó en `postgres:17-alpine`: up → verify → down/up del seed → verify → down completo. Resultados: 2 usuarios, 2 salas, 128 asientos, 4 películas, 56 funciones sin solapamiento; doble reserva rechazada (`unique_violation`); asiento asociado a otra función rechazado (`foreign_key_violation`); cancelar libera el asiento; el down deja 0 tablas. `migrations.go` todavía no se compiló porque `go.mod` llega con T2. Siguiente paso: T2.
