@@ -11,7 +11,10 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Plan de arquitectura: frontend (Vite + React), API (Go) y PostgreSQL en contenedores Docker.
 - Documentación inicial: `README.md`, `docs/arquitectura.md` (con ADRs), `docs/api.md`, `docs/base-de-datos.md`, `docs/manual-instalacion.md` y `docs/manual-uso.md`.
 - Lista de tareas en `odd/tasks/sistema-reservas-cine.md`.
-- `.gitignore` y `.env.example` con las variables de entorno del proyecto.
+- `.gitignore`.
+- Migraciones de base de datos (esquema, restricción anti doble reserva y seed de desarrollo) con script de verificación SQL.
+- Backend base en Go: configuración validada por entorno, pool `pgx`, migraciones automáticas con goose, `GET /api/healthz`, logs JSON, headers de seguridad, recuperación de panics y apagado ordenado.
+- Dockerfile del backend: multi-stage, imagen distroless de ~22 MB, usuario sin privilegios y healthcheck integrado.
 
 <!--
 Plantilla para la primera versión entregable (mover aquí lo de [Unreleased] al publicar):

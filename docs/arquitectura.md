@@ -34,8 +34,10 @@ Todos los contenedores corren con un usuario sin privilegios. `docker-compose.ym
 Arquitectura por capas con dependencias hacia adentro. Es una versión ligera de la arquitectura hexagonal, adecuada al alcance del proyecto.
 
 ```
-cmd/api/main.go            → arma todo (config, pool, servicios, router) y arranca el servidor
-internal/http/             → handlers, DTOs, middleware (auth, CORS, rate limit, logging, recover)
+cmd/api/main.go            → arma todo (config, pool, servicios, router) y arranca el servidor;
+                             `api healthcheck` lo usa Docker (la imagen distroless no tiene curl)
+internal/config/           → lee y valida variables de entorno (falla al arrancar si falta algo)
+internal/httpapi/           → handlers, DTOs, middleware (auth, CORS, rate limit, logging, recover)
 internal/service/          → reglas de negocio: validar asientos, dueño de la reserva, ventana de cancelación
 internal/store/postgres/   → repositorios con pgx (SQL parametrizado, transacciones)
 internal/domain/           → entidades y errores de negocio (sin dependencias externas)

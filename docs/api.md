@@ -31,6 +31,7 @@ Todos los errores tienen la misma forma:
 | 422 | `SHOWTIME_STARTED` | Se intenta reservar, modificar o cancelar una función que ya empezó |
 | 429 | `RATE_LIMITED` | Demasiados intentos de login o registro |
 | 500 | `INTERNAL` | Error inesperado (el detalle solo se registra en el log) |
+| 503 | `UNAVAILABLE` | La base de datos no responde (solo `/healthz`) |
 
 ## Endpoints
 
@@ -38,7 +39,9 @@ Todos los errores tienen la misma forma:
 
 | Método | Ruta | Auth | Respuesta |
 |---|---|---|---|
-| GET | `/healthz` | — | `200 {"status":"ok"}` si la DB responde |
+| GET | `/healthz` | — | `200 {"status":"ok"}` si la DB responde; `503 UNAVAILABLE` si no |
+
+Las rutas inexistentes responden `404 NOT_FOUND` con el mismo formato JSON de error. Todas las respuestas incluyen los headers `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Content-Security-Policy`.
 
 ### Auth
 

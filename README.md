@@ -55,7 +55,7 @@ La guía completa está en [`docs/manual-instalacion.md`](docs/manual-instalacio
 
 ```
 .
-├── backend/            # API en Go (cmd/ + internal/{domain,service,store,http,migrations})
+├── backend/            # API en Go (cmd/ + internal/{config,domain,service,store,httpapi,migrations})
 ├── frontend/           # SPA en React (src/features/* + src/shared/*)
 ├── docs/               # Documentación del sistema
 ├── odd/tasks/          # Lista de tareas y bitácora del proyecto

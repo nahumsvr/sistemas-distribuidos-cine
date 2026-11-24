@@ -4,5 +4,7 @@ package migrations
 
 import "embed"
 
-//go:embed *.sql
+// Only versioned files (00001_name.sql); helper scripts like verify.sql stay out.
+//
+//go:embed [0-9]*_*.sql
 var FS embed.FS
