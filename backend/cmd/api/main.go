@@ -70,6 +70,7 @@ func run(logger *slog.Logger) error {
 			Logger:        logger,
 			Auth:          service.NewAuthService(postgres.NewUserRepo(pool), tokens, bcryptCost),
 			Tokens:        tokens,
+			Catalog:       service.NewCatalogService(postgres.NewCatalogRepo(pool)),
 			AllowedOrigin: cfg.FrontendOrigin,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,

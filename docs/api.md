@@ -81,6 +81,18 @@ Seguridad:
 | GET | `/movies/{id}/showtimes` | `200 [showtime]` (solo funciones futuras) |
 | GET | `/showtimes/{id}/seats` | `200 { showtime, seats: [seat] }` |
 
+Reglas:
+
+- Son rutas públicas (sin token) y de solo lectura.
+- Un `{id}` que no sea un entero positivo responde `400 VALIDATION_ERROR`; si no existe, `404 NOT_FOUND`.
+- Las listas vacías son `[]`, nunca `null`. Las películas se ordenan por título y las funciones por hora de inicio.
+- `/showtimes/{id}/seats` devuelve todos los asientos de la sala en orden fila/número. `available` es `false` si hay una reserva activa de ese asiento en esa función; al cancelar, vuelve a `true`.
+
+```json
+// 200 /movies/1
+{ "id": 1, "title": "Dune", "synopsis": "...", "durationMin": 155, "rating": "PG-13", "posterUrl": "" }
+```
+
 ```json
 // 200 /showtimes/7/seats
 {

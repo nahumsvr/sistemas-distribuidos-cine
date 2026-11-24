@@ -19,6 +19,7 @@ type Deps struct {
 	Logger        *slog.Logger
 	Auth          AuthService
 	Tokens        TokenParser
+	Catalog       CatalogService
 	AllowedOrigin string
 	// AuthRateLimit applies to login and register. Zero value means
 	// DefaultAuthRateLimit.
@@ -40,6 +41,12 @@ func NewRouter(d Deps) http.Handler {
 	mux.HandleFunc("POST /api/auth/register", limited(registerHandler(d.Auth, d.Logger)))
 	mux.HandleFunc("POST /api/auth/login", limited(loginHandler(d.Auth, d.Logger)))
 	mux.HandleFunc("GET /api/auth/me", authed(meHandler(d.Auth, d.Logger)))
+
+	// Public catalog (read-only).
+	mux.HandleFunc("GET /api/movies", listMoviesHandler(d.Catalog, d.Logger))
+	mux.HandleFunc("GET /api/movies/{id}", getMovieHandler(d.Catalog, d.Logger))
+	mux.HandleFunc("GET /api/movies/{id}/showtimes", movieShowtimesHandler(d.Catalog, d.Logger))
+	mux.HandleFunc("GET /api/showtimes/{id}/seats", showtimeSeatsHandler(d.Catalog, d.Logger))
 
 	// Fallback so unknown routes also answer with the JSON error shape.
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {

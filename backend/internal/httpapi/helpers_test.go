@@ -22,8 +22,50 @@ const testOrigin = "http://localhost:3000"
 var testSecret = []byte("0123456789abcdef0123456789abcdef")
 
 type testDeps struct {
-	tokens *auth.Tokens
-	users  *memUsers
+	tokens  *auth.Tokens
+	users   *memUsers
+	catalog *memCatalog
+}
+
+// memCatalog is an in-memory service.CatalogRepository. Tests fill it in.
+type memCatalog struct {
+	movies    []domain.Movie
+	showtimes []domain.Showtime
+	seats     map[int64][]domain.Seat
+}
+
+func (m *memCatalog) ListMovies(context.Context) ([]domain.Movie, error) { return m.movies, nil }
+
+func (m *memCatalog) FindMovie(_ context.Context, id int64) (domain.Movie, error) {
+	for _, mv := range m.movies {
+		if mv.ID == id {
+			return mv, nil
+		}
+	}
+	return domain.Movie{}, domain.ErrNotFound
+}
+
+func (m *memCatalog) UpcomingShowtimes(_ context.Context, movieID int64, after time.Time) ([]domain.Showtime, error) {
+	var out []domain.Showtime
+	for _, s := range m.showtimes {
+		if s.MovieID == movieID && s.StartsAt.After(after) {
+			out = append(out, s)
+		}
+	}
+	return out, nil
+}
+
+func (m *memCatalog) FindShowtime(_ context.Context, id int64) (domain.Showtime, error) {
+	for _, s := range m.showtimes {
+		if s.ID == id {
+			return s, nil
+		}
+	}
+	return domain.Showtime{}, domain.ErrNotFound
+}
+
+func (m *memCatalog) SeatsWithAvailability(_ context.Context, id int64) ([]domain.Seat, error) {
+	return m.seats[id], nil
 }
 
 // newTestRouterFull wires the real router, service and token code with an
@@ -31,16 +73,18 @@ type testDeps struct {
 func newTestRouterFull(t *testing.T, db Pinger, rl RateLimit) (http.Handler, testDeps) {
 	t.Helper()
 	users := &memUsers{byID: map[int64]domain.User{}}
+	catalog := &memCatalog{}
 	tokens := auth.NewTokens(testSecret, time.Hour)
 	h := NewRouter(Deps{
 		DB:            db,
 		Logger:        slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Auth:          service.NewAuthService(users, tokens, bcrypt.MinCost),
+		Catalog:       service.NewCatalogService(catalog),
 		Tokens:        tokens,
 		AllowedOrigin: testOrigin,
 		AuthRateLimit: rl,
 	})
-	return h, testDeps{tokens: tokens, users: users}
+	return h, testDeps{tokens: tokens, users: users, catalog: catalog}
 }
 
 // generous keeps the limiter out of the way in tests that are not about it.

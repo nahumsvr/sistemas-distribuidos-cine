@@ -15,6 +15,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Migraciones de base de datos (esquema, restricción anti doble reserva y seed de desarrollo) con script de verificación SQL.
 - Backend base en Go: configuración validada por entorno, pool `pgx`, migraciones automáticas con goose, `GET /api/healthz`, logs JSON, headers de seguridad, recuperación de panics y apagado ordenado.
 - Autenticación: `POST /api/auth/register`, `POST /api/auth/login` y `GET /api/auth/me`, con JWT HS256 de 1 hora en el header `Authorization: Bearer`.
+- Catálogo público: `GET /api/movies`, `/api/movies/{id}`, `/api/movies/{id}/showtimes` (solo funciones futuras) y `/api/showtimes/{id}/seats` (mapa de asientos con disponibilidad calculada en una sola consulta).
 - Dockerfile del backend: multi-stage, imagen distroless de ~22 MB, usuario sin privilegios y healthcheck integrado.
 
 ### Security
