@@ -1,0 +1,27 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Go
+backend/bin/
+backend/tmp/
+*.test
+*.out
+coverage.*
+
+# Node / Vite
+node_modules/
+frontend/dist/
+*.local
+npm-debug.log*
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Tooling
+.codegraph/
+docker-compose.override.yml

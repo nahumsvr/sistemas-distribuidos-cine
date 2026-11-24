@@ -1,0 +1,61 @@
+# Sistema de reservas de cine — tareas
+
+Objetivo: sistema web para consultar disponibilidad y crear, modificar y cancelar reservas de asientos de cine. Usa Vite + React, Go y PostgreSQL en contenedores Docker.
+Rama: `feat/sistema-reservas` · Entrega: un commit convencional por tarea · Tests: `go test ./...` (backend), `vitest` (frontend).
+
+## Specs
+
+Requisitos citados textualmente de `Sistema_de_reservas.pdf`:
+
+- **S1** — "Es un sistema de reservas que permite a los usuarios consultar disponibilidad, crear, modificar y cancelar reservaciones desde una interfaz web, mientras la información se almacena y gestiona de forma centralizada y segura."
+- **S2** — "Aplicación frontend funcional (Vite + React)."
+- **S3** — "API backend en Go con sus endpoints (crear, consultar, modificar y cancelar reservas)."
+- **S4** — "Base de datos PostgreSQL con su esquema y diagrama entidad-relación."
+- **S5** — "Documentación: descripción del sistema, arquitectura y manual de instalación o uso."
+- **S6** — "Repositorio de código (GitHub) con README."
+- **S7** — "Contenedores: un Dockerfile por servicio (frontend y backend) y un docker-compose.yml que levanta frontend, backend y PostgreSQL."
+- **S8** — "PostgreSQL con un volumen para conservar los datos" y "Docker Compose los levanta juntos en una red compartida con un solo comando."
+
+Decisiones del equipo (no vienen del PDF):
+
+- **S9** — El dominio es un **cine**: película → función (sala + horario) → asientos. Un asiento no se puede reservar dos veces en la misma función.
+- **S10** — La autenticación usa un JWT de 1 h guardado en `localStorage` y enviado como `Authorization: Bearer`, sin nginx (ver ADR-001 en `docs/arquitectura.md`).
+- **S11** — La documentación está en español; el código y los identificadores, en inglés.
+- **S12** *(supuesto)* — Máximo 10 asientos por reserva. Solo se puede modificar o cancelar antes de que empiece la función.
+
+## Tasks
+
+| ID | Specs | Tarea | Responsable sugerido | Estado |
+|---|---|---|---|---|
+| T0 | S6, S8 | `git init`, `.gitignore`, `.env.example`, README, CHANGELOG, docs | Nahum | ✅ hecho |
+| T1 | S4, S9 | Migraciones SQL (esquema + índices + `UNIQUE(showtime_id, seat_id)`) y seed (películas, 2 salas, funciones, usuarios de prueba) | Héctor | ⬜ |
+| T2 | S3, S7 | Backend base: config por env, `slog`, pool `pgx`, `goose` embebido, `GET /api/healthz`, `http.Server` con timeouts y apagado ordenado, Dockerfile multi-stage (distroless, non-root) | Nahum | ⬜ |
+| T3 | S1, S10 | Auth: `register`, `login`, `me`; bcrypt; emisión y middleware JWT; CORS con allowlist; rate limit en login/registro; tests | Nahum | ⬜ |
+| T4 | S1, S3, S9 | Catálogo: películas, funciones y disponibilidad de asientos (una sola query); tests | Héctor | ⬜ |
+| T5 | S1, S3, S9, S12 | Reservas: crear, listar, ver, modificar y cancelar; transacciones; `409` si el asiento está ocupado; autorización por dueño; tests de service y handler | Héctor | ⬜ |
+| T6 | S3 | Admin: CRUD de películas y funciones (rol `admin`) | Héctor | ⬜ |
+| T7 | S2, S7 | Frontend base: Vite + React + TS, React Router, TanStack Query, `shared/api/client.ts`, layout, Dockerfile (`serve`) + `serve.json` (CSP, headers, cache) | Belén | ⬜ |
+| T8 | S2, S10 | Front auth: login, registro, `tokenStorage`, rutas protegidas, logout, manejo de `401` | Belén | ⬜ |
+| T9 | S1, S2, S9 | Front catálogo: cartelera, detalle, funciones, mapa de sala para elegir asientos | Belén | ⬜ |
+| T10 | S1, S2 | Front "Mis reservas": listar, modificar asientos, cancelar | Belén | ⬜ |
+| T11 | S2 | Front admin mínimo (películas y funciones) | Belén | ⬜ |
+| T12 | S7, S8 | `docker-compose.yml` con healthchecks, `depends_on: service_healthy` y volumen; probar `docker compose up --build` | Nahum | ⬜ |
+| T13 | S5, S6 | Actualizar docs con capturas, ejemplos reales de la API y el CHANGELOG `0.1.0` | Todos | ⬜ |
+| T14 | — | *(Opcional)* GitHub Actions: `go vet`, `go test`, `npm run lint`, `npm test`, `npm run build`, `npm audit` | Nahum | ⬜ |
+
+Orden recomendado: T1 → T2 → T3 → (T4, T7 en paralelo) → T5 → T8 → T9 → T10 → T6 → T11 → T12 → T13 → T14.
+
+### Criterios de aceptación globales
+
+1. `docker compose up --build` levanta los tres servicios en estado `healthy`.
+2. Un usuario puede registrarse, reservar asientos, modificarlos y cancelarlos desde la web.
+3. Dos reservas simultáneas del mismo asiento terminan en un `201` y un `409`.
+4. Una petición sin token, o con un token expirado o alterado, recibe `401`.
+5. Los datos persisten después de `docker compose down` y `docker compose up`.
+
+## Log
+
+- **L1** (2026-11-24) — Pedido original: "necesito que mires el pdf donde se especifica el proyecto, que sea simple, nada complejo, planea la arquitectura, usa las mejores prácticas actuales (separación de responsabilidades, optimización en el bacj y front, buena seguridad, cookies que protejan tokens, etc) siempre teniendo en cuenta el alcance del proyecto (proyecto escolar de fin de semestre) y una arquitectura basada en contenedores de docker, genera la lista de tareas, changelog, documentación, readme, etc"
+- **L2** (2026-11-24) — Decisión: el dominio es de asientos de cine y la documentación va en español.
+- **L3** (2026-11-24) — Corrección del usuario: "mejor si pon las cookies en el local storage, para evitar el uso de ngnix, pon en la documentación por que se tomó esta desición". Se le explicó que una cookie `HttpOnly` también funciona sin nginx (vía CORS); el usuario eligió "localStorage + Bearer". Queda documentado en ADR-001.
+- **L4** (2026-11-24) — T0 completada: esqueleto del repo y documentación inicial. Siguiente paso: T1.
