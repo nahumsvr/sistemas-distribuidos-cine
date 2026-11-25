@@ -4,7 +4,9 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -22,9 +24,10 @@ const testOrigin = "http://localhost:3000"
 var testSecret = []byte("0123456789abcdef0123456789abcdef")
 
 type testDeps struct {
-	tokens  *auth.Tokens
-	users   *memUsers
-	catalog *memCatalog
+	tokens       *auth.Tokens
+	users        *memUsers
+	catalog      *memCatalog
+	reservations *memReservations
 }
 
 // memCatalog is an in-memory service.CatalogRepository. Tests fill it in.
@@ -74,17 +77,19 @@ func newTestRouterFull(t *testing.T, db Pinger, rl RateLimit) (http.Handler, tes
 	t.Helper()
 	users := &memUsers{byID: map[int64]domain.User{}}
 	catalog := &memCatalog{}
+	reservations := newMemReservations()
 	tokens := auth.NewTokens(testSecret, time.Hour)
 	h := NewRouter(Deps{
 		DB:            db,
 		Logger:        slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Auth:          service.NewAuthService(users, tokens, bcrypt.MinCost),
 		Catalog:       service.NewCatalogService(catalog),
+		Reservations:  service.NewReservationService(reservations),
 		Tokens:        tokens,
 		AllowedOrigin: testOrigin,
 		AuthRateLimit: rl,
 	})
-	return h, testDeps{tokens: tokens, users: users, catalog: catalog}
+	return h, testDeps{tokens: tokens, users: users, catalog: catalog, reservations: reservations}
 }
 
 // generous keeps the limiter out of the way in tests that are not about it.
@@ -141,4 +146,183 @@ func (m *memUsers) FindByID(_ context.Context, id int64) (domain.User, error) {
 		return u, nil
 	}
 	return domain.User{}, domain.ErrNotFound
+}
+
+type resSeatKey struct {
+	showtimeID int64
+	seatID     int64
+}
+
+type memReservations struct {
+	mu           sync.Mutex
+	nextID       int64
+	showtimes    map[int64]domain.ReservationShowtime
+	auditoriums  map[int64][]domain.ReservedSeat
+	reservations map[int64]domain.Reservation
+	taken        map[resSeatKey]int64
+}
+
+func newMemReservations() *memReservations {
+	return &memReservations{
+		showtimes:    map[int64]domain.ReservationShowtime{},
+		auditoriums:  map[int64][]domain.ReservedSeat{},
+		reservations: map[int64]domain.Reservation{},
+		taken:        map[resSeatKey]int64{},
+	}
+}
+
+func (m *memReservations) ListByUser(_ context.Context, userID int64) ([]domain.Reservation, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []domain.Reservation
+	for _, r := range m.reservations {
+		if r.UserID == userID {
+			r.Seats = slices.Clone(r.Seats)
+			out = append(out, r)
+		}
+	}
+	slices.SortFunc(out, func(a, b domain.Reservation) int {
+		if a.ID > b.ID {
+			return -1
+		}
+		if a.ID < b.ID {
+			return 1
+		}
+		return 0
+	})
+	return out, nil
+}
+
+func (m *memReservations) FindByID(_ context.Context, id int64) (domain.Reservation, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	r, ok := m.reservations[id]
+	if !ok {
+		return domain.Reservation{}, domain.ErrNotFound
+	}
+	r.Seats = slices.Clone(r.Seats)
+	return r, nil
+}
+
+func (m *memReservations) WithTx(_ context.Context, fn func(service.ReservationTx) error) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	resCopy := make(map[int64]domain.Reservation, len(m.reservations))
+	for k, v := range m.reservations {
+		v.Seats = slices.Clone(v.Seats)
+		resCopy[k] = v
+	}
+	tx := &memResTx{
+		nextID:       m.nextID,
+		showtimes:    m.showtimes,
+		auditoriums:  m.auditoriums,
+		reservations: resCopy,
+		taken:        maps.Clone(m.taken),
+	}
+	if err := fn(tx); err != nil {
+		return err
+	}
+	m.nextID = tx.nextID
+	m.reservations = tx.reservations
+	m.taken = tx.taken
+	return nil
+}
+
+type memResTx struct {
+	nextID       int64
+	showtimes    map[int64]domain.ReservationShowtime
+	auditoriums  map[int64][]domain.ReservedSeat
+	reservations map[int64]domain.Reservation
+	taken        map[resSeatKey]int64
+}
+
+func (t *memResTx) FindShowtime(_ context.Context, id int64) (domain.ReservationShowtime, error) {
+	st, ok := t.showtimes[id]
+	if !ok {
+		return domain.ReservationShowtime{}, domain.ErrNotFound
+	}
+	return st, nil
+}
+
+func (t *memResTx) FindSeatsInAuditorium(_ context.Context, auditoriumID int64, seatIDs []int64) ([]domain.ReservedSeat, error) {
+	want := make(map[int64]struct{}, len(seatIDs))
+	for _, id := range seatIDs {
+		want[id] = struct{}{}
+	}
+	var out []domain.ReservedSeat
+	for _, s := range t.auditoriums[auditoriumID] {
+		if _, ok := want[s.ID]; ok {
+			out = append(out, s)
+		}
+	}
+	return out, nil
+}
+
+func (t *memResTx) FindReservationForUpdate(_ context.Context, id int64) (domain.Reservation, error) {
+	r, ok := t.reservations[id]
+	if !ok {
+		return domain.Reservation{}, domain.ErrNotFound
+	}
+	r.Seats = slices.Clone(r.Seats)
+	return r, nil
+}
+
+func (t *memResTx) InsertReservation(_ context.Context, userID, showtimeID int64, seatIDs []int64) (int64, time.Time, error) {
+	t.nextID++
+	id := t.nextID
+	for _, sid := range seatIDs {
+		k := resSeatKey{showtimeID: showtimeID, seatID: sid}
+		if _, busy := t.taken[k]; busy {
+			return 0, time.Time{}, domain.ErrSeatTaken
+		}
+		t.taken[k] = id
+	}
+	st := t.showtimes[showtimeID]
+	seats, _ := t.FindSeatsInAuditorium(context.Background(), st.AuditoriumID, seatIDs)
+	now := time.Now().UTC().Truncate(time.Second)
+	t.reservations[id] = domain.Reservation{
+		ID:         id,
+		UserID:     userID,
+		Status:     domain.ReservationActive,
+		Showtime:   st,
+		Seats:      seats,
+		TotalCents: len(seats) * st.PriceCents,
+		CreatedAt:  now,
+	}
+	return id, now, nil
+}
+
+func (t *memResTx) ReplaceSeats(_ context.Context, reservationID, showtimeID int64, seatIDs []int64) error {
+	for k, owner := range t.taken {
+		if owner == reservationID {
+			delete(t.taken, k)
+		}
+	}
+	for _, sid := range seatIDs {
+		k := resSeatKey{showtimeID: showtimeID, seatID: sid}
+		if _, busy := t.taken[k]; busy {
+			return domain.ErrSeatTaken
+		}
+		t.taken[k] = reservationID
+	}
+	r := t.reservations[reservationID]
+	seats, _ := t.FindSeatsInAuditorium(context.Background(), r.Showtime.AuditoriumID, seatIDs)
+	r.Seats = seats
+	r.TotalCents = len(seats) * r.Showtime.PriceCents
+	t.reservations[reservationID] = r
+	return nil
+}
+
+func (t *memResTx) CancelReservation(_ context.Context, reservationID int64) error {
+	for k, owner := range t.taken {
+		if owner == reservationID {
+			delete(t.taken, k)
+		}
+	}
+	r := t.reservations[reservationID]
+	r.Status = domain.ReservationCancelled
+	r.Seats = nil
+	r.TotalCents = 0
+	t.reservations[reservationID] = r
+	return nil
 }

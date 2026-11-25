@@ -53,6 +53,10 @@ func writeServiceError(w http.ResponseWriter, logger *slog.Logger, err error) {
 		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", ve.Message)
 	case errors.Is(err, domain.ErrEmailTaken):
 		writeError(w, http.StatusConflict, "EMAIL_TAKEN", "Email is already registered")
+	case errors.Is(err, domain.ErrSeatTaken):
+		writeError(w, http.StatusConflict, "SEAT_TAKEN", "One or more seats are already reserved")
+	case errors.Is(err, domain.ErrShowtimeStarted):
+		writeError(w, http.StatusUnprocessableEntity, "SHOWTIME_STARTED", "Showtime has already started")
 	case errors.Is(err, domain.ErrInvalidCredentials):
 		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Invalid email or password")
 	case errors.Is(err, domain.ErrNotFound):

@@ -20,6 +20,7 @@ type Deps struct {
 	Auth          AuthService
 	Tokens        TokenParser
 	Catalog       CatalogService
+	Reservations  ReservationService
 	AllowedOrigin string
 	// AuthRateLimit applies to login and register. Zero value means
 	// DefaultAuthRateLimit.
@@ -47,6 +48,13 @@ func NewRouter(d Deps) http.Handler {
 	mux.HandleFunc("GET /api/movies/{id}", getMovieHandler(d.Catalog, d.Logger))
 	mux.HandleFunc("GET /api/movies/{id}/showtimes", movieShowtimesHandler(d.Catalog, d.Logger))
 	mux.HandleFunc("GET /api/showtimes/{id}/seats", showtimeSeatsHandler(d.Catalog, d.Logger))
+
+	// User reservations (authenticated).
+	mux.HandleFunc("GET /api/reservations", authed(listReservationsHandler(d.Reservations, d.Logger)))
+	mux.HandleFunc("GET /api/reservations/{id}", authed(getReservationHandler(d.Reservations, d.Logger)))
+	mux.HandleFunc("POST /api/reservations", authed(createReservationHandler(d.Reservations, d.Logger)))
+	mux.HandleFunc("PUT /api/reservations/{id}", authed(updateReservationHandler(d.Reservations, d.Logger)))
+	mux.HandleFunc("DELETE /api/reservations/{id}", authed(cancelReservationHandler(d.Reservations, d.Logger)))
 
 	// Fallback so unknown routes also answer with the JSON error shape.
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {

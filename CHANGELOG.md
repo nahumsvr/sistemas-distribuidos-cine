@@ -16,6 +16,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Backend base en Go: configuración validada por entorno, pool `pgx`, migraciones automáticas con goose, `GET /api/healthz`, logs JSON, headers de seguridad, recuperación de panics y apagado ordenado.
 - Autenticación: `POST /api/auth/register`, `POST /api/auth/login` y `GET /api/auth/me`, con JWT HS256 de 1 hora en el header `Authorization: Bearer`.
 - Catálogo público: `GET /api/movies`, `/api/movies/{id}`, `/api/movies/{id}/showtimes` (solo funciones futuras) y `/api/showtimes/{id}/seats` (mapa de asientos con disponibilidad calculada en una sola consulta).
+- Reservas autenticadas: `GET/POST /api/reservations` y `GET/PUT/DELETE /api/reservations/{id}` con transacciones atómicas, protección anti doble reserva (`409 SEAT_TAKEN`), ventana previa al inicio (`422 SHOWTIME_STARTED`), límite de 1 a 10 asientos y aislamiento por dueño (`404`).
 - Dockerfile del backend: multi-stage, imagen distroless de ~22 MB, usuario sin privilegios y healthcheck integrado.
 - Frontend base en Vite + React + TypeScript: React Router con *code splitting* (`React.lazy`), TanStack Query, cliente HTTP en `shared/api/client.ts` (Bearer JWT, `ApiError`, manejo de `401` y `Retry-After`), `shared/auth/tokenStorage.ts` y layout accesible con navegación semántica.
 - Dockerfile del frontend (multi-stage con `node:22-alpine` + `serve`, usuario `node` sin privilegios y healthcheck) y `frontend/serve.json` (caché inmutable en `/assets/**` y `no-cache` en HTML).

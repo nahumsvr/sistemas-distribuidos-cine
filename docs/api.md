@@ -118,8 +118,10 @@ Reglas de negocio:
 
 - De 1 a 10 asientos por reserva, sin repetir, y todos de la sala de esa función.
 - Solo se puede crear, modificar o cancelar antes de `startsAt` (si no, `422 SHOWTIME_STARTED`).
-- Al modificar, los asientos se reemplazan en una sola transacción: o se aplica todo o nada.
+- Al modificar, los asientos se reemplazan en una sola transacción: o se aplica todo o nada. Una reserva cancelada no se puede modificar (`400 VALIDATION_ERROR`).
+- Al cancelar, se liberan los asientos (`seats: []`, `totalCents: 0`); repetir `DELETE` antes de `startsAt` es idempotente (`204`).
 - Una reserva de otro usuario responde `404`, para no revelar que existe.
+- `GET /reservations` devuelve las reservas del usuario ordenadas de la más reciente a la más antigua (lista vacía `[]`, nunca `null`).
 
 ```json
 // 201 POST /reservations

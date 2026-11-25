@@ -71,6 +71,7 @@ func run(logger *slog.Logger) error {
 			Auth:          service.NewAuthService(postgres.NewUserRepo(pool), tokens, bcryptCost),
 			Tokens:        tokens,
 			Catalog:       service.NewCatalogService(postgres.NewCatalogRepo(pool)),
+			Reservations:  service.NewReservationService(postgres.NewReservationRepo(pool)),
 			AllowedOrigin: cfg.FrontendOrigin,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
