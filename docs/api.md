@@ -28,6 +28,7 @@ Todos los errores tienen la misma forma:
 | 404 | `NOT_FOUND` | El recurso no existe o pertenece a otro usuario |
 | 409 | `SEAT_TAKEN` | Algún asiento ya está reservado para esa función |
 | 409 | `EMAIL_TAKEN` | El email ya está registrado |
+| 409 | `HAS_ACTIVE_RESERVATIONS` | No se puede modificar la sala ni eliminar una película o función con reservas activas |
 | 413 | `PAYLOAD_TOO_LARGE` | El cuerpo supera 1 MB |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | Un `POST`/`PUT` con cuerpo no trae `Content-Type: application/json` |
 | 422 | `SHOWTIME_STARTED` | Se intenta reservar, modificar o cancelar una función que ya empezó |
@@ -137,14 +138,22 @@ Reglas de negocio:
 
 ### Administración (rol `admin`)
 
-| Método | Ruta | Body |
-|---|---|---|
-| POST | `/admin/movies` | `{ "title", "synopsis", "durationMin", "rating", "posterUrl" }` |
-| PUT | `/admin/movies/{id}` | igual que POST |
-| DELETE | `/admin/movies/{id}` | — (`409` si tiene funciones con reservas activas) |
-| POST | `/admin/showtimes` | `{ "movieId", "auditoriumId", "startsAt", "priceCents" }` |
-| PUT | `/admin/showtimes/{id}` | igual que POST |
-| DELETE | `/admin/showtimes/{id}` | — (`409` si tiene reservas activas) |
+| Método | Ruta | Body | Respuesta |
+|---|---|---|---|
+| GET | `/admin/auditoriums` | — | `200 [{ "id", "name", "rows", "cols" }]` |
+| POST | `/admin/movies` | `{ "title", "synopsis", "durationMin", "rating", "posterUrl" }` | `201 movie` |
+| PUT | `/admin/movies/{id}` | igual que POST | `200 movie` |
+| DELETE | `/admin/movies/{id}` | — | `204` (`409 HAS_ACTIVE_RESERVATIONS` si tiene funciones con reservas activas) |
+| POST | `/admin/showtimes` | `{ "movieId", "auditoriumId", "startsAt", "priceCents" }` | `201 { "id", "movieId", "auditoriumId", "auditorium", "startsAt", "priceCents" }` |
+| PUT | `/admin/showtimes/{id}` | igual que POST | `200` (misma forma; `409` si cambia de sala con reservas activas) |
+| DELETE | `/admin/showtimes/{id}` | — | `204` (`409 HAS_ACTIVE_RESERVATIONS` si tiene reservas activas) |
+
+Reglas:
+
+- Exige un JWT válido con rol `admin`; sin token responde `401 UNAUTHORIZED` y con rol `user` responde `403 FORBIDDEN`.
+- `title` de 1 a 200 caracteres, `durationMin > 0`, `posterUrl` vacío o URL `http(s)` válida.
+- `startsAt` debe ser futuro (ISO 8601) y `priceCents >= 0`. Un `movieId` o `auditoriumId` inexistente responde `404 NOT_FOUND`.
+- Al eliminar una película o función sin reservas activas, también se limpian sus reservas canceladas previas en la misma transacción.
 
 ## Ejemplo con curl
 

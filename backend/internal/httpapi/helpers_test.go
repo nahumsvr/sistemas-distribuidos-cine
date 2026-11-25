@@ -28,6 +28,7 @@ type testDeps struct {
 	users        *memUsers
 	catalog      *memCatalog
 	reservations *memReservations
+	admin        *memAdmin
 }
 
 // memCatalog is an in-memory service.CatalogRepository. Tests fill it in.
@@ -78,6 +79,7 @@ func newTestRouterFull(t *testing.T, db Pinger, rl RateLimit) (http.Handler, tes
 	users := &memUsers{byID: map[int64]domain.User{}}
 	catalog := &memCatalog{}
 	reservations := newMemReservations()
+	admin := newMemAdmin()
 	tokens := auth.NewTokens(testSecret, time.Hour)
 	h := NewRouter(Deps{
 		DB:            db,
@@ -85,11 +87,12 @@ func newTestRouterFull(t *testing.T, db Pinger, rl RateLimit) (http.Handler, tes
 		Auth:          service.NewAuthService(users, tokens, bcrypt.MinCost),
 		Catalog:       service.NewCatalogService(catalog),
 		Reservations:  service.NewReservationService(reservations),
+		Admin:         service.NewAdminService(admin),
 		Tokens:        tokens,
 		AllowedOrigin: testOrigin,
 		AuthRateLimit: rl,
 	})
-	return h, testDeps{tokens: tokens, users: users, catalog: catalog, reservations: reservations}
+	return h, testDeps{tokens: tokens, users: users, catalog: catalog, reservations: reservations, admin: admin}
 }
 
 // generous keeps the limiter out of the way in tests that are not about it.
@@ -324,5 +327,126 @@ func (t *memResTx) CancelReservation(_ context.Context, reservationID int64) err
 	r.Seats = nil
 	r.TotalCents = 0
 	t.reservations[reservationID] = r
+	return nil
+}
+
+type memAdmin struct {
+	mu             sync.Mutex
+	nextMovieID    int64
+	nextShowtimeID int64
+	auditoriums    map[int64]domain.Auditorium
+	movies         map[int64]domain.Movie
+	showtimes      map[int64]domain.Showtime
+	activeShowtime map[int64]bool
+}
+
+func newMemAdmin() *memAdmin {
+	return &memAdmin{
+		auditoriums:    map[int64]domain.Auditorium{},
+		movies:         map[int64]domain.Movie{},
+		showtimes:      map[int64]domain.Showtime{},
+		activeShowtime: map[int64]bool{},
+	}
+}
+
+func (m *memAdmin) ListAuditoriums(context.Context) ([]domain.Auditorium, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]domain.Auditorium, 0, len(m.auditoriums))
+	for _, a := range m.auditoriums {
+		out = append(out, a)
+	}
+	slices.SortFunc(out, func(a, b domain.Auditorium) int { return strings.Compare(a.Name, b.Name) })
+	return out, nil
+}
+
+func (m *memAdmin) CreateMovie(_ context.Context, mv domain.Movie) (domain.Movie, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.nextMovieID++
+	mv.ID = m.nextMovieID
+	m.movies[mv.ID] = mv
+	return mv, nil
+}
+
+func (m *memAdmin) UpdateMovie(_ context.Context, mv domain.Movie) (domain.Movie, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.movies[mv.ID]; !ok {
+		return domain.Movie{}, domain.ErrNotFound
+	}
+	m.movies[mv.ID] = mv
+	return mv, nil
+}
+
+func (m *memAdmin) DeleteMovie(_ context.Context, id int64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.movies[id]; !ok {
+		return domain.ErrNotFound
+	}
+	for sid, st := range m.showtimes {
+		if st.MovieID == id && m.activeShowtime[sid] {
+			return domain.ErrHasActiveReservations
+		}
+	}
+	for sid, st := range m.showtimes {
+		if st.MovieID == id {
+			delete(m.showtimes, sid)
+		}
+	}
+	delete(m.movies, id)
+	return nil
+}
+
+func (m *memAdmin) CreateShowtime(_ context.Context, st domain.Showtime) (domain.Showtime, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.movies[st.MovieID]; !ok {
+		return domain.Showtime{}, domain.ErrNotFound
+	}
+	aud, ok := m.auditoriums[st.AuditoriumID]
+	if !ok {
+		return domain.Showtime{}, domain.ErrNotFound
+	}
+	m.nextShowtimeID++
+	st.ID = m.nextShowtimeID
+	st.Auditorium = aud.Name
+	m.showtimes[st.ID] = st
+	return st, nil
+}
+
+func (m *memAdmin) UpdateShowtime(_ context.Context, st domain.Showtime) (domain.Showtime, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	cur, ok := m.showtimes[st.ID]
+	if !ok {
+		return domain.Showtime{}, domain.ErrNotFound
+	}
+	if _, ok := m.movies[st.MovieID]; !ok {
+		return domain.Showtime{}, domain.ErrNotFound
+	}
+	aud, ok := m.auditoriums[st.AuditoriumID]
+	if !ok {
+		return domain.Showtime{}, domain.ErrNotFound
+	}
+	if cur.AuditoriumID != st.AuditoriumID && m.activeShowtime[st.ID] {
+		return domain.Showtime{}, domain.ErrHasActiveReservations
+	}
+	st.Auditorium = aud.Name
+	m.showtimes[st.ID] = st
+	return st, nil
+}
+
+func (m *memAdmin) DeleteShowtime(_ context.Context, id int64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.showtimes[id]; !ok {
+		return domain.ErrNotFound
+	}
+	if m.activeShowtime[id] {
+		return domain.ErrHasActiveReservations
+	}
+	delete(m.showtimes, id)
 	return nil
 }

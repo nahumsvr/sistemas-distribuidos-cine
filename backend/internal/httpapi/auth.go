@@ -127,3 +127,21 @@ func RequireAuth(tokens TokenParser) func(http.HandlerFunc) http.HandlerFunc {
 		}
 	}
 }
+
+// RequireRole restricts an authenticated route to callers with the given role.
+func RequireRole(role domain.Role) func(http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			claims, ok := ClaimsFrom(r.Context())
+			if !ok {
+				unauthorized(w)
+				return
+			}
+			if claims.Role != role {
+				writeError(w, http.StatusForbidden, "FORBIDDEN", "Admin privileges required")
+				return
+			}
+			next(w, r)
+		}
+	}
+}

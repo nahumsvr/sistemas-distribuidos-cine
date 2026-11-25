@@ -13,11 +13,12 @@ type Movie struct {
 
 // Showtime is one screening of a movie in an auditorium.
 type Showtime struct {
-	ID         int64
-	MovieID    int64
-	Auditorium string
-	StartsAt   time.Time
-	PriceCents int
+	ID           int64
+	MovieID      int64
+	AuditoriumID int64
+	Auditorium   string
+	StartsAt     time.Time
+	PriceCents   int
 }
 
 // Seat is a physical seat plus whether it is free for one specific showtime.

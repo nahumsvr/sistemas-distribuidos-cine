@@ -55,6 +55,8 @@ func writeServiceError(w http.ResponseWriter, logger *slog.Logger, err error) {
 		writeError(w, http.StatusConflict, "EMAIL_TAKEN", "Email is already registered")
 	case errors.Is(err, domain.ErrSeatTaken):
 		writeError(w, http.StatusConflict, "SEAT_TAKEN", "One or more seats are already reserved")
+	case errors.Is(err, domain.ErrHasActiveReservations):
+		writeError(w, http.StatusConflict, "HAS_ACTIVE_RESERVATIONS", "Cannot modify or delete a resource with active reservations")
 	case errors.Is(err, domain.ErrShowtimeStarted):
 		writeError(w, http.StatusUnprocessableEntity, "SHOWTIME_STARTED", "Showtime has already started")
 	case errors.Is(err, domain.ErrInvalidCredentials):

@@ -72,6 +72,7 @@ func run(logger *slog.Logger) error {
 			Tokens:        tokens,
 			Catalog:       service.NewCatalogService(postgres.NewCatalogRepo(pool)),
 			Reservations:  service.NewReservationService(postgres.NewReservationRepo(pool)),
+			Admin:         service.NewAdminService(postgres.NewAdminRepo(pool)),
 			AllowedOrigin: cfg.FrontendOrigin,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,

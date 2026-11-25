@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"proyecto-cine/backend/internal/domain"
 )
 
 // Pinger is the only thing the health check needs from the database.
@@ -21,6 +23,7 @@ type Deps struct {
 	Tokens        TokenParser
 	Catalog       CatalogService
 	Reservations  ReservationService
+	Admin         AdminService
 	AllowedOrigin string
 	// AuthRateLimit applies to login and register. Zero value means
 	// DefaultAuthRateLimit.
@@ -34,6 +37,9 @@ func NewRouter(d Deps) http.Handler {
 	}
 	limited := newIPLimiter(rl).wrap
 	authed := RequireAuth(d.Tokens)
+	adminOnly := func(next http.HandlerFunc) http.HandlerFunc {
+		return authed(RequireRole(domain.RoleAdmin)(next))
+	}
 
 	mux := http.NewServeMux()
 
@@ -55,6 +61,15 @@ func NewRouter(d Deps) http.Handler {
 	mux.HandleFunc("POST /api/reservations", authed(createReservationHandler(d.Reservations, d.Logger)))
 	mux.HandleFunc("PUT /api/reservations/{id}", authed(updateReservationHandler(d.Reservations, d.Logger)))
 	mux.HandleFunc("DELETE /api/reservations/{id}", authed(cancelReservationHandler(d.Reservations, d.Logger)))
+
+	// Administration (admin role).
+	mux.HandleFunc("GET /api/admin/auditoriums", adminOnly(adminListAuditoriumsHandler(d.Admin, d.Logger)))
+	mux.HandleFunc("POST /api/admin/movies", adminOnly(adminCreateMovieHandler(d.Admin, d.Logger)))
+	mux.HandleFunc("PUT /api/admin/movies/{id}", adminOnly(adminUpdateMovieHandler(d.Admin, d.Logger)))
+	mux.HandleFunc("DELETE /api/admin/movies/{id}", adminOnly(adminDeleteMovieHandler(d.Admin, d.Logger)))
+	mux.HandleFunc("POST /api/admin/showtimes", adminOnly(adminCreateShowtimeHandler(d.Admin, d.Logger)))
+	mux.HandleFunc("PUT /api/admin/showtimes/{id}", adminOnly(adminUpdateShowtimeHandler(d.Admin, d.Logger)))
+	mux.HandleFunc("DELETE /api/admin/showtimes/{id}", adminOnly(adminDeleteShowtimeHandler(d.Admin, d.Logger)))
 
 	// Fallback so unknown routes also answer with the JSON error shape.
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
