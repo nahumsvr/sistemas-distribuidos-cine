@@ -1,0 +1,65 @@
+import { QueryClientProvider } from '@tanstack/react-query';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { describe, expect, it } from 'vitest';
+import { createQueryClient } from './api/queryClient';
+import { appRoutes } from './router';
+
+function renderAt(initialEntry: string) {
+  const queryClient = createQueryClient();
+  const router = createMemoryRouter(appRoutes, {
+    initialEntries: [initialEntry],
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+}
+
+describe('App layout and router', () => {
+  it('renders semantic landmarks, skip link, active nav link, and Cartelera route', async () => {
+    renderAt('/');
+
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Principal' })).toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ir al contenido principal' })).toHaveAttribute(
+      'href',
+      '#main-content',
+    );
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cartelera' })).toBeInTheDocument();
+    expect(document.title).toBe('Cartelera | Cine');
+    expect(screen.getByRole('link', { name: 'Cartelera' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('navigates between lazy-loaded routes and updates active indicator and title', async () => {
+    const user = userEvent.setup();
+    renderAt('/');
+
+    await screen.findByRole('heading', { level: 1, name: 'Cartelera' });
+    await user.click(screen.getByRole('link', { name: 'Mis reservas' }));
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Mis reservas' }),
+    ).toBeInTheDocument();
+    expect(document.title).toBe('Mis reservas | Cine');
+    expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(screen.getByRole('link', { name: 'Cartelera' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('renders the 404 page on unknown routes', async () => {
+    renderAt('/ruta-que-no-existe');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Página no encontrada' }),
+    ).toBeInTheDocument();
+    expect(document.title).toBe('Página no encontrada | Cine');
+  });
+});
