@@ -20,6 +20,7 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 - Dockerfile del backend: multi-stage, imagen distroless de ~22 MB, usuario sin privilegios y healthcheck integrado.
 - Frontend base en Vite + React + TypeScript: React Router con *code splitting* (`React.lazy`), TanStack Query, cliente HTTP en `shared/api/client.ts` (Bearer JWT, `ApiError`, manejo de `401` y `Retry-After`), `shared/auth/tokenStorage.ts` y layout accesible con navegación semántica.
 - Dockerfile del frontend (multi-stage con `node:22-alpine` + `serve`, usuario `node` sin privilegios y healthcheck) y `frontend/serve.json` (caché inmutable en `/assets/**` y `no-cache` en HTML).
+- Autenticación en frontend: formularios accesibles de inicio de sesión y registro (`autocomplete`, validación tras interacción y límite UTF-8 de 72 bytes), `AuthProvider` sincronizado con `tokenStorage` y `/api/auth/me`, rutas protegidas (`/reservations` y `/admin` por rol), cierre de sesión con limpieza de caché y redirección a `/login` con aviso en `401`.
 
 ### Security
 

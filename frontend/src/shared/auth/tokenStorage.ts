@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'cine_auth_token';
+export const TOKEN_KEY = 'cine_auth_token';
 
 type TokenListener = (token: string | null) => void;
 

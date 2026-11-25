@@ -1,5 +1,7 @@
 import { lazy } from 'react';
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
+import { AuthProvider } from '../features/auth/AuthProvider';
+import { ProtectedRoute } from '../features/auth/ProtectedRoute';
 import { Layout } from './ui/Layout';
 
 const MoviesPage = lazy(() => import('../features/movies/containers/MoviesPage'));
@@ -14,15 +16,33 @@ const NotFoundPage = lazy(() => import('./ui/NotFoundPage'));
 export const appRoutes: RouteObject[] = [
   {
     path: '/',
-    element: <Layout />,
+    element: (
+      <AuthProvider>
+        <Layout />
+      </AuthProvider>
+    ),
     children: [
       { index: true, element: <MoviesPage /> },
       { path: 'movies/:movieId', element: <MovieDetailPage /> },
       { path: 'showtimes/:showtimeId', element: <ShowtimeSeatsPage /> },
-      { path: 'reservations', element: <ReservationsPage /> },
+      {
+        path: 'reservations',
+        element: (
+          <ProtectedRoute>
+            <ReservationsPage />
+          </ProtectedRoute>
+        ),
+      },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
-      { path: 'admin', element: <AdminPage /> },
+      {
+        path: 'admin',
+        element: (
+          <ProtectedRoute requiredRole="admin">
+            <AdminPage />
+          </ProtectedRoute>
+        ),
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

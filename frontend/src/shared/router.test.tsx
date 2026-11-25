@@ -2,7 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { createQueryClient } from './api/queryClient';
 import { appRoutes } from './router';
 
@@ -19,6 +19,10 @@ function renderAt(initialEntry: string) {
 }
 
 describe('App layout and router', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it('renders semantic landmarks, skip link, active nav link, and Cartelera route', async () => {
     renderAt('/');
 
@@ -41,13 +45,13 @@ describe('App layout and router', () => {
     renderAt('/');
 
     await screen.findByRole('heading', { level: 1, name: 'Cartelera' });
-    await user.click(screen.getByRole('link', { name: 'Mis reservas' }));
+    await user.click(screen.getByRole('link', { name: 'Iniciar sesión' }));
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Mis reservas' }),
+      await screen.findByRole('heading', { level: 1, name: 'Iniciar sesión' }),
     ).toBeInTheDocument();
-    expect(document.title).toBe('Mis reservas | Cine');
-    expect(screen.getByRole('link', { name: 'Mis reservas' })).toHaveAttribute(
+    expect(document.title).toBe('Iniciar sesión | Cine');
+    expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute(
       'aria-current',
       'page',
     );

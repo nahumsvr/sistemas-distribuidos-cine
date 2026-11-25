@@ -1,15 +1,11 @@
 import { Suspense } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../../features/auth/hooks';
 import { LoadingState } from './LoadingState';
 
-const NAV_ITEMS = [
-  { to: '/', label: 'Cartelera', end: true },
-  { to: '/reservations', label: 'Mis reservas', end: false },
-  { to: '/login', label: 'Iniciar sesión', end: false },
-  { to: '/register', label: 'Registrarse', end: false },
-] as const;
-
 export function Layout() {
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+
   return (
     <>
       <header className="site-header">
@@ -22,17 +18,47 @@ export function Layout() {
           </Link>
           <nav aria-label="Principal">
             <ul className="site-nav-list">
-              {NAV_ITEMS.map((item) => (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    end={item.end}
-                    className="site-nav-link"
-                  >
-                    {item.label}
-                  </NavLink>
-                </li>
-              ))}
+              <li>
+                <NavLink to="/" end className="site-nav-link">
+                  Cartelera
+                </NavLink>
+              </li>
+
+              {isAuthenticated && user ? (
+                <>
+                  <li>
+                    <NavLink to="/reservations" className="site-nav-link">
+                      Mis reservas
+                    </NavLink>
+                  </li>
+                  {user.role === 'admin' ? (
+                    <li>
+                      <NavLink to="/admin" className="site-nav-link">
+                        Administración
+                      </NavLink>
+                    </li>
+                  ) : null}
+                  <li className="site-nav-user">
+                    <span className="site-user-name">{user.name}</span>
+                    <button type="button" className="btn btn-sm" onClick={logout}>
+                      Cerrar sesión
+                    </button>
+                  </li>
+                </>
+              ) : !isLoading ? (
+                <>
+                  <li>
+                    <NavLink to="/login" className="site-nav-link">
+                      Iniciar sesión
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/register" className="site-nav-link">
+                      Registrarse
+                    </NavLink>
+                  </li>
+                </>
+              ) : null}
             </ul>
           </nav>
         </div>
