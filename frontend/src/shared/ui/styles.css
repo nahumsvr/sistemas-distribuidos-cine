@@ -17,7 +17,9 @@
     --color-danger-bg: #fef2f2;
     --color-danger-border: #dc2626;
     --color-danger-text: #991b1b;
+    --color-success-bg: #f0fdf4;
     --color-success-border: #15803d;
+    --color-success-text: #166534;
     --color-info-bg: #eff6ff;
     --color-info-border: #2563eb;
     --color-info-text: #1e40af;
@@ -51,7 +53,9 @@
       --color-danger-bg: #450a0a;
       --color-danger-border: #f87171;
       --color-danger-text: #fecaca;
+      --color-success-bg: #052e16;
       --color-success-border: #4ade80;
+      --color-success-text: #bbf7d0;
       --color-info-bg: #172554;
       --color-info-border: #60a5fa;
       --color-info-text: #bfdbfe;
@@ -405,6 +409,447 @@
     font-size: 0.9375rem;
     color: var(--color-text-muted);
   }
+
+  .page-header {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    line-height: 1.3;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .back-link:hover {
+    text-decoration: underline;
+  }
+
+  .inline-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  .empty-state {
+    padding-block: var(--space-4);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding-inline: var(--space-2);
+    padding-block: 0.125rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-subtle);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+  }
+
+  .success-alert {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-success-border);
+    background-color: var(--color-success-bg);
+    color: var(--color-success-text);
+  }
+
+  .success-alert-title {
+    font-weight: 700;
+  }
+
+  /* ---- Movies catalog ---- */
+  .movies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+    gap: var(--space-4);
+  }
+
+  .movie-card {
+    container-type: inline-size;
+    position: relative;
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    transition: border-color 120ms ease;
+  }
+
+  .movie-card:has(a.card-link:hover) {
+    border-color: var(--color-accent);
+  }
+
+  .movie-card:has(a.card-link:focus-visible) {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+
+  .movie-card a.card-link {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .movie-card a.card-link:focus-visible {
+    outline: none;
+  }
+
+  .movie-card a.card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .movie-poster {
+    inline-size: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-subtle);
+  }
+
+  @container (min-width: 30rem) {
+    .movie-card:has(> img) {
+      grid-template-columns: 9rem 1fr;
+      align-items: start;
+    }
+
+    .movie-card:has(> img) > img {
+      grid-row: 1 / span 3;
+    }
+  }
+
+  .movie-card-header {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .movie-card-title {
+    font-size: 1.25rem;
+    line-height: 1.25;
+  }
+
+  .movie-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .movie-duration {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .movie-synopsis {
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .movie-card-footer {
+    padding-block-start: var(--space-1);
+  }
+
+  .movie-cta {
+    font-weight: 600;
+    color: var(--color-accent);
+    font-size: 0.9375rem;
+  }
+
+  /* ---- Movie detail & showtimes ---- */
+  .movie-detail-header {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .movie-detail-header:has(> img) {
+    grid-template-columns: minmax(0, 12rem) 1fr;
+    align-items: start;
+  }
+
+  @media (max-width: 36rem) {
+    .movie-detail-header:has(> img) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .movie-detail-poster {
+    inline-size: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-subtle);
+  }
+
+  .movie-detail-info {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+  }
+
+  .showtime-days {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .showtime-day-group {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .showtime-day-heading {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+
+  .showtime-list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .showtime-chip {
+    display: grid;
+    gap: 0.125rem;
+    min-inline-size: 8.5rem;
+    padding-inline: var(--space-4);
+    padding-block: var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface-subtle);
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .showtime-chip:hover {
+    border-color: var(--color-accent);
+    background-color: var(--color-surface);
+  }
+
+  .showtime-time {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--color-accent);
+  }
+
+  .showtime-auditorium {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .showtime-price {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  /* ---- Seat map & booking summary ---- */
+  .showtime-header {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .showtime-subtitle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .seat-page-layout {
+    display: grid;
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  @media (min-width: 56rem) {
+    .seat-page-layout {
+      grid-template-columns: minmax(0, 1fr) 21rem;
+    }
+  }
+
+  .seat-map-wrapper {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .seat-screen {
+    text-align: center;
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-subtle);
+    border-block-end: 3px solid var(--color-accent);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--color-text-muted);
+  }
+
+  .seat-legend {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-4);
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
+  .seat-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .seat-swatch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 2px solid var(--color-border);
+  }
+
+  .seat-swatch-available {
+    background-color: var(--color-surface);
+  }
+
+  .seat-swatch-selected {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent-contrast);
+  }
+
+  .seat-swatch-occupied {
+    background-color: var(--color-surface-subtle);
+    border-style: dashed;
+    color: var(--color-text-muted);
+  }
+
+  .seat-grid-scroll {
+    overflow-x: auto;
+    padding-block: var(--space-2);
+  }
+
+  .seat-rows {
+    display: grid;
+    gap: var(--space-2);
+    inline-size: max-content;
+    margin-inline: auto;
+  }
+
+  .seat-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .seat-row-label {
+    inline-size: 1.5rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  .seat-row-seats {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .seat-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2.75rem;
+    block-size: 2.5rem;
+    padding: 0;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    border: 2px solid var(--color-border);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+  }
+
+  .seat-btn:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    background-color: var(--color-surface-subtle);
+  }
+
+  .seat-btn.is-selected {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent-contrast);
+    box-shadow: inset 0 0 0 2px var(--color-surface);
+  }
+
+  .seat-btn.is-occupied {
+    background-color: var(--color-surface-subtle);
+    border-style: dashed;
+    color: var(--color-text-muted);
+    opacity: 0.65;
+    cursor: not-allowed;
+    text-decoration: line-through;
+  }
+
+  .booking-summary {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .summary-list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    font-size: 0.9375rem;
+  }
+
+  .summary-row dt {
+    color: var(--color-text-muted);
+  }
+
+  .summary-row dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: end;
+  }
+
+  .summary-total {
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--color-border);
+    font-size: 1.0625rem;
+  }
+
+  .summary-actions {
+    display: grid;
+    gap: var(--space-2);
+  }
 }
 
 @layer utilities {
@@ -424,6 +869,15 @@
 @media (forced-colors: active) {
   .site-nav-link[aria-current='page'] {
     border-block-end: 2px solid LinkText;
+  }
+
+  .seat-btn.is-selected {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
+
+  .seat-btn.is-occupied {
+    border-style: dashed;
   }
 }
 

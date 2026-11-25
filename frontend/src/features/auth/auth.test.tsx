@@ -152,7 +152,8 @@ describe('Auth feature flows', () => {
       )
       .mockResolvedValueOnce(
         jsonResponse({ token: 'jwt-new-user', user: USER_ANA }, { status: 201 }),
-      );
+      )
+      .mockResolvedValue(jsonResponse([]));
     const user = userEvent.setup();
 
     renderApp('/register');

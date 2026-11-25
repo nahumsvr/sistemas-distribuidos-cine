@@ -2,7 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createQueryClient } from './api/queryClient';
 import { appRoutes } from './router';
 
@@ -21,6 +21,16 @@ function renderAt(initialEntry: string) {
 describe('App layout and router', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('renders semantic landmarks, skip link, active nav link, and Cartelera route', async () => {
