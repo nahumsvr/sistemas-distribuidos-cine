@@ -60,9 +60,10 @@ describe('Auth feature flows', () => {
   });
 
   it('redirects unauthenticated users from /reservations to /login and returns after login', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      jsonResponse({ token: 'jwt-valid-token', user: USER_ANA }),
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(jsonResponse({ token: 'jwt-valid-token', user: USER_ANA }))
+      .mockResolvedValueOnce(jsonResponse([]));
     const user = userEvent.setup();
 
     renderApp('/reservations');
@@ -96,7 +97,7 @@ describe('Auth feature flows', () => {
     expect(tokenStorage.get()).toBe('jwt-valid-token');
     expect(screen.getByText('Ana García')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('validates login fields after interaction and displays API 401/429 errors without redirecting', async () => {
@@ -240,6 +241,7 @@ describe('Auth feature flows', () => {
     tokenStorage.set('jwt-active');
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(jsonResponse({ user: USER_ANA }))
+      .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(
         jsonResponse(
           { error: { code: 'UNAUTHORIZED', message: 'Token expired' } },

@@ -954,6 +954,161 @@
   .confirm-dialog-actions {
     justify-content: flex-end;
   }
+
+  /* ---- Reservations & modal dialogs ---- */
+  .reservations-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .reservations-list {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .reservation-card {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .reservation-card.is-cancelled {
+    opacity: 0.8;
+  }
+
+  .reservation-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .reservation-id {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .reservation-movie-title {
+    font-size: 1.1875rem;
+    font-weight: 700;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding-block: var(--space-1);
+    padding-inline: var(--space-3);
+    border-radius: 999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border: 1px solid var(--color-border);
+  }
+
+  .badge-active {
+    background-color: var(--color-success-bg);
+    border-color: var(--color-success-border);
+    color: var(--color-success-text);
+  }
+
+  .badge-muted {
+    background-color: var(--color-surface-subtle);
+    color: var(--color-text-muted);
+  }
+
+  .reservation-meta {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+  }
+
+  .reservation-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2);
+    font-size: 0.9375rem;
+  }
+
+  .reservation-meta-row dt {
+    color: var(--color-text-muted);
+  }
+
+  .reservation-meta-row dd {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .reservation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .empty-state {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+  }
+
+  .app-dialog {
+    max-inline-size: 30rem;
+    inline-size: calc(100% - 2rem);
+    max-block-size: calc(100dvh - 2rem);
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .app-dialog-wide {
+    max-inline-size: 46rem;
+  }
+
+  .app-dialog:modal {
+    overscroll-behavior: contain;
+  }
+
+  .app-dialog::backdrop {
+    background-color: rgba(15, 23, 42, 0.6);
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
+  .app-dialog-body {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6);
+  }
+
+  .app-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .app-dialog-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .dialog-content-stack {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-3);
+  }
 }
 
 @layer utilities {
